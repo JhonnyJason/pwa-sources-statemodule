@@ -10,7 +10,7 @@ print = (arg) -> console.log(arg)
 #endregion
 
 ############################################################
-defaultState = require("./defaultstate.js")
+defaultState = require("./defaultstate")
 
 ############################################################
 state = localStorage.getItem("state")
