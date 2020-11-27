@@ -112,6 +112,3 @@ statemodule.load = (key) -> state[key]
 #endregion
 
 module.exports = statemodule
-
-
-
