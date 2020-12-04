@@ -13,24 +13,59 @@ print = (arg) -> console.log(arg)
 defaultState = require("./defaultstate")
 
 ############################################################
-state = localStorage.getItem("state")
-if state then state = JSON.parse(state)
-else state = defaultState
+#region internalProperties
+state = null
+allStates = {}
 
-############################################################
 listeners = {}
+changeDetectors = {}
 
-############################################################
-statemodule.initialize = () ->
-    log "statemodule.initialize"
-    return
+#endregion
+
 
 ############################################################
 #region internalFunctions
-saveState = ->
-    log "saveState"
+loadRegularState = ->
+    state = localStorage.getItem("state")
+    if state? then state = JSON.parse(state)
+    else state = defaultState
+
+    for key,content of state #when key != "_dedicatedStates"
+        if !content.content?
+            state[key] = {content}
+        allStates[key] = state[key]
+    return
+
+############################################################
+#region stateChangeStuff
+hasChanged = (oldContent, newContent) -> oldContent != newContent
+
+changeDetected = (key, content) ->
+    detector = changeDetectors[key] || hasChanged
+    return detector(allStates[key].content, content)
+
+#endregion
+
+loadDedicated = (key) ->
+    isDedicated = true
+    contentString = localStorage.getItem(key)
+    content = JSON.parse(contentString)
+    allStates[key] = {content, isDedicated}
+    return content
+
+saveDedicatedState = (key) ->
+
+saveRegularState = ->
+    log "saveRegularState"
     stateString = JSON.stringify(state)
     localStorage.setItem("state", stateString)
+    return
+
+
+saveAllStates = ->
+    for key,content of allStates when content.isDedicated
+        saveDedicatedState(key, content.content)
+    saveRegularState()
     return
 
 callOnChangeListeners = (key) ->
@@ -44,7 +79,18 @@ callOnChangeListeners = (key) ->
 
 ############################################################
 #region exposedFunctions
-statemodule.getState = -> state
+statemodule.getState = -> allStates
+
+############################################################
+statemodule.load = (key) ->
+    if allStates[key]? and allStates[key].isVolatile
+        return allStates[key].content
+    if allStates[key]? and !allStates[key].isDedicated
+        loadRegularState()
+        return allStates[key].content
+    return loadDedicated(key)
+
+statemodule.get = (key) -> allStates[key].content
 
 ############################################################
 statemodule.removeOnChangeListener = (key, fun) ->
@@ -73,42 +119,64 @@ statemodule.callOutChange = (key) ->
 
 ############################################################
 #region stateSetterFunctions
-statemodule.saveAll = saveState
+statemodule.saveAll = saveAllStates
 
 ############################################################
-statemodule.save = (key, content) ->
+statemodule.save = (key, content, isDedicated) ->
     log "statemodule.save"
-    return if state[key] == content
-    state[key] = content
-    saveState()
+    ##TODO implement
+    isVolatile = (allStates[key]? and allStates[key].isVolatile)
+    return unless changeDetected(key, content) and !isVolatile
+
+    if typeof isDedicated != "boolean"
+        # default is stay with
+        isDedicated = (allStates[key]? and allStates[key].isDedicated)
+    else if isDedicated != (allStates[key]? and allStates[key].isDedicated)
+
+
+
+    if allStates[key]?
+        allStates[key].content = content
+        allStates[key].isDedicated = isDedicated
+    else
+        allStates[key] = {content, isDedicated}
+
+    if isDedicated then saveDedicatedState(key)
+    else saveRegularState()
+
     await statemodule.callOutChange(key)
     return
 
 statemodule.saveSilently = (key, content) ->
     log "statemodule.saveSilently"
-    return if state[key] == content
-    state[key] = content
-    saveState()
+    return unless changeDetected(key, content)
+    state[key].content = content
+    saveState(key)
     return
 
 statemodule.set = (key, content) ->
     log "statemodule.set"
-    return if state[key] == content
-    state[key] = content
+    isVolatile = true
+
+    try allStates[key].content = content
+    catch err then allStates[key] = {content,isVolatile}
+    
     await statemodule.callOutChange(key)
     return
 
 statemodule.setSilently = (key, content) ->
     log "statemodule.setSilently"
-    return if state[key] == content
-    state[key] = content
+    isVolatile = true
+    try allStates[key].content = content
+    catch err then allStates[key] = {content,isVolatile}
     return
 
 #endregion
 
-############################################################
-statemodule.load = (key) -> state[key]
 
 #endregion
+
+############################################################
+loadRegularState()
 
 module.exports = statemodule
