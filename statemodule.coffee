@@ -128,11 +128,11 @@ statemodule.save = (key, content, isDedicated) ->
     isVolatile = (allStates[key]? and allStates[key].isVolatile)
     return unless changeDetected(key, content) and !isVolatile
 
-    if typeof isDedicated != "boolean"
-        # default is stay with
-        isDedicated = (allStates[key]? and allStates[key].isDedicated)
-    else if isDedicated != (allStates[key]? and allStates[key].isDedicated)
-
+    # if typeof isDedicated != "boolean"
+    #     # default is stay with
+    #     isDedicated = (allStates[key]? and allStates[key].isDedicated)
+    # else if isDedicated != (allStates[key]? and allStates[key].isDedicated)
+    ##TODO implement
 
 
     if allStates[key]?
