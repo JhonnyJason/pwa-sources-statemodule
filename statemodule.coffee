@@ -22,7 +22,6 @@ changeDetectors = {}
 
 #endregion
 
-
 ############################################################
 #region internalFunctions
 loadRegularState = ->
@@ -46,14 +45,19 @@ changeDetected = (key, content) ->
 
 #endregion
 
+############################################################
 loadDedicated = (key) ->
     isDedicated = true
     contentString = localStorage.getItem(key)
     content = JSON.parse(contentString)
     allStates[key] = {content, isDedicated}
     return content
-
+    
 saveDedicatedState = (key) ->
+    content = allStates[key].content
+    contentString = JSON.stringify(content)
+    localStorage.setItem(key, contentString)    
+    return
 
 saveRegularState = ->
     log "saveRegularState"
@@ -61,19 +65,67 @@ saveRegularState = ->
     localStorage.setItem("state", stateString)
     return
 
+allmightySetAndSave = (key, content, isDedicated, silent) ->
+    isVolatile = (allStates[key]? and allStates[key].isVolatile)
 
+    if typeof isDedicated != "boolean"
+        isDedicated = (allStates[key]? and allStates[key].isDedicated)
+        ## true when it existed and was isDedicated
+        ## false if it did not exist
+        ## false if it was not isDedicated
+
+    if allStates[key]?
+        if allStates[key].isDedicated then isDedicatedChanged = isDedicated
+        else isDedicatedChanged = !isDedicated
+        return unless changeDetected(key, content) or isVolatile or isDedicatedChanged
+        
+        allStates[key].content = content
+
+        if isDedicated then allStates[key].isDedicated = true
+        if isDedicatedChanged and !isDedicated 
+            localStorage.removeItem(key)
+            delete allStates[key].isDedicated
+        if isVolatile then delete allStates[key].isVolatile
+    else
+        allStates[key] = {content, isDedicated}
+
+
+    if isDedicated
+        saveDedicatedState(key)
+        if state[key]?
+            delete state[key]
+            saveRegularState()
+    else
+        if !state[key]? then state[key] = allStates[key]
+        saveRegularState()
+
+    if silent then return
+    return callOnChangeListeners(key)
+    
 saveAllStates = ->
     for key,content of allStates when content.isDedicated
-        saveDedicatedState(key, content.content)
+        saveDedicatedState(key)
     saveRegularState()
     return
 
+
+############################################################
+allmightySet = (key, content, silent) ->
+    isVolatile = true
+    return unless changeDetected(key, content)
+
+    try allStates[key].content = content
+    catch err then allStates[key] = {content,isVolatile}
+    
+    if silent then return
+    return callOnChangeListeners(key)
+
+
+############################################################
 callOnChangeListeners = (key) ->
-    log "callOnChangeListeners"
     return if !listeners[key]?
     promises = (fun() for fun in listeners[key])
-    await Promise.all(promises)
-    return
+    return await Promise.all(promises)
 
 #endregion
 
@@ -82,6 +134,7 @@ callOnChangeListeners = (key) ->
 statemodule.getState = -> allStates
 
 ############################################################
+#region localStorageRelevantFunctions
 statemodule.load = (key) ->
     if allStates[key]? and allStates[key].isVolatile
         return allStates[key].content
@@ -90,9 +143,58 @@ statemodule.load = (key) ->
         return allStates[key].content
     return loadDedicated(key)
 
-statemodule.get = (key) -> allStates[key].content
+statemodule.save = (key, content, isDedicated) ->
+    log "statemodule.save"
+    return allmightySetAndSave(key, content, isDedicated, false)
+
+statemodule.saveSilently = (key, content, isDedicated) ->
+    log "statemodule.saveSilently"
+    return allmightySetAndSave(key, content, isDedicated, true)
+
+statemodule.saveAll = saveAllStates
 
 ############################################################
+statemodule.remove = (key) ->
+    log "statemodule.remove"
+    return unless allStates[key]?
+    if allStates[key].isVolatile
+        delete allStates[key]
+        return
+    if allStates[key].isDedicated
+        localStorage.removeItem(key)
+        delete allStates[key]
+        return
+    delete allStates[key]
+    delete state[key]
+    saveRegularState()
+    return
+
+#endregion
+
+############################################################
+#region regularGettSetterFunctions
+statemodule.get = (key) -> allStates[key].content
+
+statemodule.set = (key, content) ->
+    log "statemodule.set"
+    allmightySet(key, content, false)
+    return
+
+statemodule.setSilently = (key, content) ->
+    log "statemodule.setSilently"
+    allmightySet(key, content, true)
+    return
+
+#endregion
+
+############################################################
+#region stateChangeRelevantFunctions
+statemodule.addOnChangeListener = (key, fun) ->
+    log "statemodule.addOnChangeListener"
+    if !listeners[key]? then listeners[key] = []
+    listeners[key].push(fun)
+    return
+
 statemodule.removeOnChangeListener = (key, fun) ->
     log "statemodule.removeOnChangeListener"
     candidates = listeners[key]
@@ -105,76 +207,18 @@ statemodule.removeOnChangeListener = (key, fun) ->
         log "No candidate found for given function!"
     return
 
-statemodule.addOnChangeListener = (key, fun) ->
-    log "statemodule.addOnChangeListener"
-    if !listeners[key]? then listeners[key] = []
-    listeners[key].push(fun)
-    return
-
-statemodule.callOutChange = (key) ->
-    log "statemodule.callOutChange"
-    try await callOnChangeListeners(key)
-    catch err then log err
-    return
+statemodule.callOutChange = (key) -> callOnChangeListeners(key)
 
 ############################################################
-#region stateSetterFunctions
-statemodule.saveAll = saveAllStates
-
-############################################################
-statemodule.save = (key, content, isDedicated) ->
-    log "statemodule.save"
-    ##TODO implement
-    isVolatile = (allStates[key]? and allStates[key].isVolatile)
-    return unless changeDetected(key, content) and !isVolatile
-
-    # if typeof isDedicated != "boolean"
-    #     # default is stay with
-    #     isDedicated = (allStates[key]? and allStates[key].isDedicated)
-    # else if isDedicated != (allStates[key]? and allStates[key].isDedicated)
-    ##TODO implement
-
-
-    if allStates[key]?
-        allStates[key].content = content
-        allStates[key].isDedicated = isDedicated
-    else
-        allStates[key] = {content, isDedicated}
-
-    if isDedicated then saveDedicatedState(key)
-    else saveRegularState()
-
-    await statemodule.callOutChange(key)
-    return
-
-statemodule.saveSilently = (key, content) ->
-    log "statemodule.saveSilently"
-    return unless changeDetected(key, content)
-    state[key].content = content
-    saveState(key)
-    return
-
-statemodule.set = (key, content) ->
-    log "statemodule.set"
-    isVolatile = true
-
-    try allStates[key].content = content
-    catch err then allStates[key] = {content,isVolatile}
-    
-    await statemodule.callOutChange(key)
-    return
-
-statemodule.setSilently = (key, content) ->
-    log "statemodule.setSilently"
-    isVolatile = true
-    try allStates[key].content = content
-    catch err then allStates[key] = {content,isVolatile}
+statemodule.setChangeDetectionFunction = (key, fun) ->
+    if !fun? then delete changeDetectors[key]
+    else changeDetectors[key] = fun
     return
 
 #endregion
 
-
 #endregion
+
 
 ############################################################
 loadRegularState()
