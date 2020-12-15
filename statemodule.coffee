@@ -27,12 +27,17 @@ changeDetectors = {}
 loadRegularState = ->
     state = localStorage.getItem("state")
     if state? then state = JSON.parse(state)
-    else state = defaultState
-
-    for key,content of state #when key != "_dedicatedStates"
-        if !content.content?
-            state[key] = {content}
+    else state = {}
+    
+    for key,content of state
+        if !content? or !content.content?
+            state[key] = {content:null}
         allStates[key] = state[key]
+
+    isVolatile = true
+    for key,content of defaultState when !allStates[key]?
+        allStates[key] = {content, isVolatile}
+
     return
 
 ############################################################
@@ -47,6 +52,7 @@ changeDetected = (key, content) ->
 
 ############################################################
 loadDedicated = (key) ->
+    log "loadDedicated"
     isDedicated = true
     contentString = localStorage.getItem(key)
     content = JSON.parse(contentString)
@@ -54,6 +60,7 @@ loadDedicated = (key) ->
     return content
     
 saveDedicatedState = (key) ->
+    log "saveDedicatedState"
     content = allStates[key].content
     contentString = JSON.stringify(content)
     localStorage.setItem(key, contentString)    
@@ -103,6 +110,8 @@ allmightySetAndSave = (key, content, isDedicated, silent) ->
     return callOnChangeListeners(key)
     
 saveAllStates = ->
+    log "saveAllStates"
+    olog allStates
     for key,content of allStates when content.isDedicated
         saveDedicatedState(key)
     saveRegularState()
@@ -136,6 +145,7 @@ statemodule.getState = -> allStates
 ############################################################
 #region localStorageRelevantFunctions
 statemodule.load = (key) ->
+    log "statemodule.load"
     if allStates[key]? and allStates[key].isVolatile
         return allStates[key].content
     if allStates[key]? and !allStates[key].isDedicated
