@@ -46,6 +46,7 @@ hasChanged = (oldContent, newContent) -> oldContent != newContent
 
 changeDetected = (key, content) ->
     detector = changeDetectors[key] || hasChanged
+    return true if !allStates[key]?
     return detector(allStates[key].content, content)
 
 #endregion
@@ -74,18 +75,33 @@ saveRegularState = ->
 
 allmightySetAndSave = (key, content, isDedicated, silent) ->
     isVolatile = (allStates[key]? and allStates[key].isVolatile)
+    
+    # print("isDedicated: "+ isDedicated)
 
     if typeof isDedicated != "boolean"
-        isDedicated = (allStates[key]? and allStates[key].isDedicated)
+        # print("I was here!")
+        isDedicated = (allStates[key]? and (allStates[key].isDedicated == true))
         ## true when it existed and was isDedicated
         ## false if it did not exist
         ## false if it was not isDedicated
 
+    # print("isDedicated: "+ isDedicated)
+
     if allStates[key]?
-        if allStates[key].isDedicated then isDedicatedChanged = isDedicated
-        else isDedicatedChanged = !isDedicated
-        return unless changeDetected(key, content) or isVolatile or isDedicatedChanged
+        if allStates[key].isDedicated then isDedicatedChanged = (isDedicated != allStates[key].isDedicated)
+        else isDedicatedChanged = isDedicated
         
+        # print("allStates[key].isDedicated: " + allStates[key].isDedicated)
+        # print("isDedicatedChanged: " + isDedicatedChanged)
+
+        return unless changeDetected(key, content) or isVolatile or isDedicatedChanged
+
+        # print("key: " + key)
+        # print("changeDetected: "+ changeDetected(key, content))
+        # print("isDedicatedChanged: "+ isDedicatedChanged)
+        # print("isVolatile: "+ isVolatile)
+        # print("- - -")
+
         allStates[key].content = content
 
         if isDedicated then allStates[key].isDedicated = true
@@ -183,7 +199,9 @@ statemodule.remove = (key) ->
 
 ############################################################
 #region regularGettSetterFunctions
-statemodule.get = (key) -> allStates[key].content
+statemodule.get = (key) -> 
+    return undefined unless allStates[key]? 
+    return allStates[key].content
 
 statemodule.set = (key, content) ->
     log "statemodule.set"
