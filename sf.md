@@ -1,3 +1,4 @@
+[![hackmd-github-sync-badge](https://hackmd.io/nn708ujuRLeo0crmfr2X_Q/badge)](https://hackmd.io/nn708ujuRLeo0crmfr2X_Q)
 ###### tags: `strunfun`
 
 # [pwa-sources-statemodule](https://github.com/JhonnyJason/pwa-sources-statemodule) - statemodule
