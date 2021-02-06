@@ -47,6 +47,7 @@ hasChanged = (oldContent, newContent) -> oldContent != newContent
 changeDetected = (key, content) ->
     detector = changeDetectors[key] || hasChanged
     return true if !allStates[key]?
+    oldContent = allStates[key].content
     return detector(allStates[key].content, content)
 
 #endregion
@@ -56,13 +57,21 @@ loadDedicated = (key) ->
     log "loadDedicated"
     isDedicated = true
     contentString = localStorage.getItem(key)
+    print "- - -"
+    print key
+    print contentString
+    print "- - -"
     content = JSON.parse(contentString)
     allStates[key] = {content, isDedicated}
+    # print ostr {allStates}
     return content
     
 saveDedicatedState = (key) ->
     log "saveDedicatedState"
+    log key
+    olog {allStates}
     content = allStates[key].content
+    allStates[key].isDedicated = true
     contentString = JSON.stringify(content)
     localStorage.setItem(key, contentString)    
     return
@@ -93,7 +102,7 @@ allmightySetAndSave = (key, content, isDedicated, silent) ->
         
         # print("allStates[key].isDedicated: " + allStates[key].isDedicated)
         # print("isDedicatedChanged: " + isDedicatedChanged)
-
+        # olog "changeDetected: "+changeDetected(key, content)
         return unless changeDetected(key, content) or isVolatile or isDedicatedChanged
 
         # print("key: " + key)
@@ -162,6 +171,7 @@ statemodule.getState = -> allStates
 #region localStorageRelevantFunctions
 statemodule.load = (key) ->
     log "statemodule.load"
+    olog {allStates}
     if allStates[key]? and allStates[key].isVolatile
         return allStates[key].content
     if allStates[key]? and !allStates[key].isDedicated
@@ -171,7 +181,9 @@ statemodule.load = (key) ->
 
 statemodule.save = (key, content, isDedicated) ->
     log "statemodule.save"
-    return allmightySetAndSave(key, content, isDedicated, false)
+    return unless key?
+    if !content? and !isDedicated? then saveDedicatedState(key)
+    else return allmightySetAndSave(key, content, isDedicated, false)
 
 statemodule.saveSilently = (key, content, isDedicated) ->
     log "statemodule.saveSilently"
@@ -246,7 +258,6 @@ statemodule.setChangeDetectionFunction = (key, fun) ->
 #endregion
 
 #endregion
-
 
 ############################################################
 loadRegularState()
