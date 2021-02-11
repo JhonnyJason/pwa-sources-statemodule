@@ -57,10 +57,10 @@ loadDedicated = (key) ->
     log "loadDedicated"
     isDedicated = true
     contentString = localStorage.getItem(key)
-    print "- - -"
-    print key
-    print contentString
-    print "- - -"
+    # print "- - -"
+    # print key
+    # print contentString
+    # print "- - -"
     content = JSON.parse(contentString)
     allStates[key] = {content, isDedicated}
     # print ostr {allStates}
