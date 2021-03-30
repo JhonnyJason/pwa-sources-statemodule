@@ -191,6 +191,8 @@ statemodule.saveSilently = (key, content, isDedicated) ->
 
 statemodule.saveAll = saveAllStates
 
+statemodule.saveRegularState = saveRegularState
+
 ############################################################
 statemodule.remove = (key) ->
     log "statemodule.remove"
