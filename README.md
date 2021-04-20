@@ -4,7 +4,7 @@
 # [pwa-sources-statemodule](https://github.com/JhonnyJason/pwa-sources-statemodule) - statemodule
 
 ## Description
-Implementation of the [PWA Statemodule](https://hackmd.io/gzTX785OSVmzuxy6CnV72w?view)
+Implementation for [PWA Statemodule](https://hackmd.io/gzTX785OSVmzuxy6CnV72w?view)
 
 ## Expectation to the Environment
 - `defaultState = require("./defaultstate")`
