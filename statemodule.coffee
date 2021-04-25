@@ -213,7 +213,7 @@ statemodule.remove = (key) ->
 
 ############################################################
 #region regularGettSetterFunctions
-statemodule.get = (key) -> 
+statemodule.get = (key) ->
     return undefined unless allStates[key]? 
     return allStates[key].content
 
