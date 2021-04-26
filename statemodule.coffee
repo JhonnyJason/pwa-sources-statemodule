@@ -30,8 +30,8 @@ loadRegularState = ->
     else state = {}
     
     for key,content of state
-        if !content? or !content.content?
-            state[key] = {content:null}
+        if !content? then content = null
+        if !content? or !content.content? then state[key] = {content}
         allStates[key] = state[key]
 
     isVolatile = true
