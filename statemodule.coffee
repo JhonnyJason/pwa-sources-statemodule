@@ -10,7 +10,8 @@ print = (arg) -> console.log(arg)
 #endregion
 
 ############################################################
-defaultState = require("./defaultstate")
+try defaultState = require("./defaultstate")
+catch err then defaultstate = {}
 
 ############################################################
 #region internalProperties
