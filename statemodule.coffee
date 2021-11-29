@@ -250,7 +250,7 @@ statemodule.removeOnChangeListener = (key, fun) ->
         log "No candidate found for given function!"
     return
 
-statemodule.clearOnChangeListener = (key, fun) ->
+statemodule.clearOnChangeListeners = (key, fun) ->
     log "statemodule.clearOnChangeListener"
     listeners[key] = []
     return
