@@ -242,12 +242,17 @@ statemodule.removeOnChangeListener = (key, fun) ->
     log "statemodule.removeOnChangeListener"
     candidates = listeners[key]
     if candidates?
-        for candidate,i in candidates when candidates == fun
+        for candidate,i in candidates when candidate == fun
             log "candidate found at: " + i
             candidates[i] = candidates[candidates.length - 1]
             candidates.pop()
             return
         log "No candidate found for given function!"
+    return
+
+statemodule.clearOnChangeListener = (key, fun) ->
+    log "statemodule.clearOnChangeListener"
+    listeners[key] = []
     return
 
 statemodule.callOutChange = (key) -> callOnChangeListeners(key)
