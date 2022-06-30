@@ -155,6 +155,13 @@ allmightySet = (key, content, silent) ->
     if silent then return
     return callOnChangeListeners(key)
 
+############################################################
+decomposeObject = (obj) ->
+    keys = Object.keys(obj)
+    if keys.length != 1 then throw new Error("Object did not have exactly one Member!")
+    key = keys[0]
+    content = obj[key]
+    return {key, content}
 
 ############################################################
 callOnChangeListeners = (key) ->
@@ -183,11 +190,15 @@ statemodule.load = (key) ->
 statemodule.save = (key, content, isDedicated) ->
     log "statemodule.save"
     return unless key?
+    if typeof key == "object" then {key, content} = decomposeObject(key)
+
     if !content? and !isDedicated? then saveDedicatedState(key)
     else return allmightySetAndSave(key, content, isDedicated, false)
 
 statemodule.saveSilently = (key, content, isDedicated) ->
     log "statemodule.saveSilently"
+    if typeof key == "object" then {key, content} = decomposeObject(key)
+
     return allmightySetAndSave(key, content, isDedicated, true)
 
 statemodule.saveAll = saveAllStates
@@ -220,11 +231,15 @@ statemodule.get = (key) ->
 
 statemodule.set = (key, content) ->
     log "statemodule.set"
+    if typeof key == "object" then {key, content} = decomposeObject(key)
+
     allmightySet(key, content, false)
     return
 
 statemodule.setSilently = (key, content) ->
     log "statemodule.setSilently"
+    if typeof key == "object" then {key, content} = decomposeObject(key)
+
     allmightySet(key, content, true)
     return
 
