@@ -10,7 +10,7 @@ print = (arg) -> console.log(arg)
 #endregion
 
 ############################################################
-try defaultState = require("./defaultstate")
+try defaultState = require("./defaultstate.js")
 catch err then defaultstate = {}
 
 ############################################################
