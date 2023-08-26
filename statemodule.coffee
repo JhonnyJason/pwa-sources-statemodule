@@ -69,8 +69,8 @@ loadDedicated = (key) ->
     
 saveDedicatedState = (key) ->
     log "saveDedicatedState"
-    log key
-    olog {allStates}
+    # log key
+    # olog {allStates}
     content = allStates[key].content
     allStates[key].isDedicated = true
     contentString = JSON.stringify(content)
@@ -137,7 +137,7 @@ allmightySetAndSave = (key, content, isDedicated, silent) ->
     
 saveAllStates = ->
     log "saveAllStates"
-    olog allStates
+    # olog allStates
     for key,content of allStates when content.isDedicated
         saveDedicatedState(key)
     saveRegularState()
@@ -179,7 +179,7 @@ statemodule.getState = -> allStates
 #region localStorageRelevantFunctions
 statemodule.load = (key) ->
     log "statemodule.load"
-    olog {allStates}
+    # olog {allStates}
     if allStates[key]? and allStates[key].isVolatile
         return allStates[key].content
     if allStates[key]? and !allStates[key].isDedicated
