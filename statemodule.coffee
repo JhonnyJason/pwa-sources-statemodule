@@ -2,10 +2,10 @@ statemodule = {name: "statemodule"}
 ############################################################
 #region printLogFunctions
 log = (arg) ->
-    if allModules.debugmodule.modulesToDebug["statemodule"]?  then console.log "[statemodule]: " + arg
+    if allModules.debugmodule.modulesToDebug["statemodule"]?  then console.## prod log "[statemodule]: " + arg
     return
 ostr = (obj) -> JSON.stringify(obj, null, 4)
-olog = (obj) -> log "\n" + ostr(obj)
+olog = (obj) -> ## prod log "\n" + ostr(obj)
 print = (arg) -> console.log(arg)
 #endregion
 
@@ -55,7 +55,7 @@ changeDetected = (key, content) ->
 
 ############################################################
 loadDedicated = (key) ->
-    log "loadDedicated"
+    ## prod log "loadDedicated"
     isDedicated = true
     contentString = localStorage.getItem(key)
     # print "- - -"
@@ -68,7 +68,7 @@ loadDedicated = (key) ->
     return content
     
 saveDedicatedState = (key) ->
-    log "saveDedicatedState"
+    ## prod log "saveDedicatedState"
     # log key
     # olog {allStates}
     content = allStates[key].content
@@ -78,7 +78,7 @@ saveDedicatedState = (key) ->
     return
 
 saveRegularState = ->
-    log "saveRegularState"
+    ## prod log "saveRegularState"
     stateString = JSON.stringify(state)
     localStorage.setItem("state", stateString)
     return
@@ -136,7 +136,7 @@ allmightySetAndSave = (key, content, isDedicated, silent) ->
     return callOnChangeListeners(key)
     
 saveAllStates = ->
-    log "saveAllStates"
+    ## prod log "saveAllStates"
     # olog allStates
     for key,content of allStates when content.isDedicated
         saveDedicatedState(key)
@@ -178,7 +178,7 @@ statemodule.getState = -> allStates
 ############################################################
 #region localStorageRelevantFunctions
 statemodule.load = (key) ->
-    log "statemodule.load"
+    ## prod log "statemodule.load"
     # olog {allStates}
     if allStates[key]? and allStates[key].isVolatile
         return allStates[key].content
@@ -188,7 +188,7 @@ statemodule.load = (key) ->
     return loadDedicated(key)
 
 statemodule.save = (key, content, isDedicated) ->
-    log "statemodule.save"
+    ## prod log "statemodule.save"
     return unless key?
     if typeof key == "object" then {key, content} = decomposeObject(key)
 
@@ -196,7 +196,7 @@ statemodule.save = (key, content, isDedicated) ->
     else return allmightySetAndSave(key, content, isDedicated, false)
 
 statemodule.saveSilently = (key, content, isDedicated) ->
-    log "statemodule.saveSilently"
+    ## prod log "statemodule.saveSilently"
     if typeof key == "object" then {key, content} = decomposeObject(key)
 
     return allmightySetAndSave(key, content, isDedicated, true)
@@ -207,7 +207,7 @@ statemodule.saveRegularState = saveRegularState
 
 ############################################################
 statemodule.remove = (key) ->
-    log "statemodule.remove"
+    ## prod log "statemodule.remove"
     return unless allStates[key]?
     if allStates[key].isVolatile
         delete allStates[key]
@@ -230,14 +230,14 @@ statemodule.get = (key) ->
     return allStates[key].content
 
 statemodule.set = (key, content) ->
-    log "statemodule.set"
+    ## prod log "statemodule.set"
     if typeof key == "object" then {key, content} = decomposeObject(key)
 
     allmightySet(key, content, false)
     return
 
 statemodule.setSilently = (key, content) ->
-    log "statemodule.setSilently"
+    ## prod log "statemodule.setSilently"
     if typeof key == "object" then {key, content} = decomposeObject(key)
 
     allmightySet(key, content, true)
@@ -248,25 +248,25 @@ statemodule.setSilently = (key, content) ->
 ############################################################
 #region stateChangeRelevantFunctions
 statemodule.addOnChangeListener = (key, fun) ->
-    log "statemodule.addOnChangeListener"
+    ## prod log "statemodule.addOnChangeListener"
     if !listeners[key]? then listeners[key] = []
     listeners[key].push(fun)
     return
 
 statemodule.removeOnChangeListener = (key, fun) ->
-    log "statemodule.removeOnChangeListener"
+    ## prod log "statemodule.removeOnChangeListener"
     candidates = listeners[key]
     if candidates?
         for candidate,i in candidates when candidate == fun
-            log "candidate found at: " + i
+            ## prod log "candidate found at: " + i
             candidates[i] = candidates[candidates.length - 1]
             candidates.pop()
             return
-        log "No candidate found for given function!"
+        ## prod log "No candidate found for given function!"
     return
 
 statemodule.clearOnChangeListeners = (key, fun) ->
-    log "statemodule.clearOnChangeListener"
+    ## prod log "statemodule.clearOnChangeListener"
     listeners[key] = []
     return
 
